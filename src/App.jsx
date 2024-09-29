@@ -1,33 +1,47 @@
 import { useEffect, useState } from 'react'
-
+import axios from 'axios'
 function App() {
   const [AllTodo,setAllTodo]=useState([]);
- const [Todo, setTodo]=useState({title:"",desc:""});
+  const [Todo, setTodo]=useState({title:"",desc:""});
+
+  const fetchTodos=async()=>{
+    try {
+    const response= await axios.get('http://localhost:8000')
+    setAllTodo(response.data)
+    console.log(setAllTodo)
+    } catch (error) {
+      console.log("error in featching todos",error)
+    }
+  }
+  useEffect(()=>{
+    fetchTodos()
+  },[AllTodo])
  
-  function handleTodo(){
+ async function  handleTodo(){
   //  setAllTodo(prevValue=>[...prevValue,Todo]);
   if(!Todo.title || !Todo.desc){
     return
   }
-    setAllTodo([...AllTodo,Todo])
-    savTodo([...AllTodo,Todo])
+   try {
+   await axios.post('http://localhost:8000/todos',Todo)
+    setAllTodo([...AllTodo,response.data])
+    setTodo({ title: "", desc: "" });
+   } catch (error) {
+    console.log("server erorr",error)
+   }
+  
   }  
   
-  function deleteTodo(index){ 
-      AllTodo.splice(index,1) 
-     savTodo(AllTodo)
-     setAllTodo(AllTodo);
+ async function deleteTodo(_id,index){ 
+     try {
+     await axios.delete(`http://localhost:8000/todos/${_id}`)
+     const updatedTodos = AllTodo.filter((_, i) => i !== index);
+      setAllTodo(updatedTodos);
+     } catch (error) {
+      console.log("server side deleteproblem",error)
+     }
   }
-  function savTodo(todo){
-    localStorage.setItem("todos",JSON.stringify(todo))
-  }
-  function getdatafromLocal(){
-    let data=JSON.parse(localStorage.getItem("todos"))||[]
-    setAllTodo(data)
-  } 
-  useEffect(()=>{
- getdatafromLocal()
-  },[])
+
   return (
     <div className='bg-slate-500 max-w-screen max-h-screen overflow-auto flex flex-col items-center'>
     <div className='bg-white shadow-lg rounded-lg p-8 w-3/4 max-w-md'>
@@ -67,7 +81,7 @@ function App() {
             <h3 className='text-lg font-bold'>Title: {item.title}</h3>
             <p className='text-gray-600'>Description: {item.desc}</p>
             <button
-              onClick={() => deleteTodo(index)}
+              onClick={() => deleteTodo(item._id,index)}
               className='mt-4 bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 transition duration-200'
             >
               Delete
